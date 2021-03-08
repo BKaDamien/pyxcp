@@ -421,7 +421,6 @@ class MasterBaseType:
         """
 
         response = self.transport.request(types.Command.UPLOAD, length)
-        response = response.tobytes() # Convert memoryview object.
         if length > (self.slaveProperties.maxCto - 1):
             block_response = self.transport.block_receive(
                 length_required=(length - len(response)))
@@ -445,7 +444,7 @@ class MasterBaseType:
         addr = self.DWORD_pack(address)
         response = self.transport.request(
             types.Command.SHORT_UPLOAD, length, 0, addressExt, *addr)
-        return response.tobytes() # Convert memoryview object.
+        return response
 
     @wrapped
     def buildChecksum(self, blocksize: int):
