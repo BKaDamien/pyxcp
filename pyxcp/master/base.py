@@ -12,7 +12,7 @@
 __copyright__ = """
     pySART - Simplified AUTOSAR-Toolkit for Python.
 
-   (C) 2009-2020 by Christoph Schueler <cpu12.gems@googlemail.com>
+   (C) 2009-2021 by Christoph Schueler <cpu12.gems@googlemail.com>
 
    All Rights Reserved
 
@@ -34,6 +34,7 @@ __copyright__ = """
 import logging
 import struct
 import traceback
+import warnings
 
 from pyxcp import checksum
 from pyxcp import types
@@ -63,6 +64,12 @@ class SlaveProperties(dict):
 
     def __setattr__(self, name, value):
         self[name] = value
+
+    def __getstate__(self):
+        return self
+
+    def __setstate__(self, state):
+        self = state
 
 
 class MasterBaseType:
@@ -414,6 +421,7 @@ class MasterBaseType:
         """
 
         response = self.transport.request(types.Command.UPLOAD, length)
+        response = response.tobytes() # Convert memoryview object.
         if length > (self.slaveProperties.maxCto - 1):
             block_response = self.transport.block_receive(
                 length_required=(length - len(response)))
@@ -437,7 +445,7 @@ class MasterBaseType:
         addr = self.DWORD_pack(address)
         response = self.transport.request(
             types.Command.SHORT_UPLOAD, length, 0, addressExt, *addr)
-        return response
+        return response.tobytes() # Convert memoryview object.
 
     @wrapped
     def buildChecksum(self, blocksize: int):
@@ -941,7 +949,7 @@ class MasterBaseType:
 
         Parameters
         ----------
-        daqElements : list of DAQ elements
+        daqElements : list of `dict` containing the following keys: *bitOffset*, *size*, *address*, *addressExt*.
         """
         if len(daqElements) > self.slaveProperties.maxWriteDaqMultipleElements:
             raise ValueError("At most {} daqElements are permitted.".format(self.slaveProperties.maxWriteDaqMultipleElements))
@@ -1456,4 +1464,32 @@ def ticks_to_seconds(ticks, resolution):
 
     unit: `GetDaqResolutionInfoResponse` as returned by :meth:`getDaqResolutionInfo`
     """
+    warnings.warn("ticks_to_seconds() deprecated, use factory :func:`make_tick_converter` instead.", Warning)
     return (10 ** types.DAQ_TIMESTAMP_UNIT_TO_EXP[resolution.timestampMode.unit]) * resolution.timestampTicks * ticks
+
+
+def make_tick_converter(resolution):
+    """Make a function that converts tick count from XCP slave to seconds.
+
+    Parameters
+    ----------
+    resolution: `GetDaqResolutionInfoResponse` as returned by :meth:`getDaqResolutionInfo`
+
+    """
+    exponent = types.DAQ_TIMESTAMP_UNIT_TO_EXP[resolution.timestampMode.unit]
+    tick_resolution = resolution.timestampTicks
+    base = (10 ** exponent) * tick_resolution
+
+    def ticks_to_seconds(ticks):
+        """Convert DAQ timestamp/tick value to seconds.
+
+        Parameters
+        ----------
+        ticks: int
+
+        Returns
+        -------
+        float
+        """
+        return base * ticks
+    return ticks_to_seconds
