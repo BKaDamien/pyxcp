@@ -36,6 +36,7 @@ target_include_directories(
 )
 target_link_libraries(test_timestamp eth)
 
+if (WIN32)
 add_executable(test_basic_socket tests/test_basic_socket.cpp)
 target_include_directories(
     test_basic_socket PUBLIC
@@ -43,6 +44,7 @@ target_include_directories(
     ${eth_booster_SOURCE_DIR}/${_PS}
 )
 target_link_libraries(test_basic_socket eth ws2_32)
+endif(UNIX)
 
 add_executable(test_pool tests/test_pool.cpp)
 target_include_directories(
