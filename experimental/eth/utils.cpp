@@ -22,13 +22,21 @@
  *
  * s. FLOSS-EXCEPTION.txt
  */
-
-
 #include "eth.hpp"
 
+#include <cstdio>
+
+void SocketErrorExit(const char * method)
+{
+    fprintf(stderr, "%s failed with: %d\n", method, GET_LAST_SOCKET_ERROR());
+    exit(1);
+}
+
+
+#if !defined(_WIN32)
 /*
  *
- * Window-ish Sleep function.
+ * Window-ish Sleep function for Linux.
  *
  */
 void Sleep(unsigned ms)
@@ -39,4 +47,4 @@ void Sleep(unsigned ms)
     value.tv_nsec = (ms % 1000) * 1000 * 1000;
     nanosleep(&value, &rem);
 }
-
+#endif

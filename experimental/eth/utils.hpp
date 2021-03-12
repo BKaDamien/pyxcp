@@ -26,6 +26,15 @@
 #if !defined(__UTILS_HPP)
 #define __UTILS_HPP
 
-void Sleep(unsigned ms);
+#if defined(_WIN32)
+    #define ZeroOut(p, s)               ::SecureZeroMemory((p), (s))
+    #define GET_LAST_SOCKET_ERROR()     WSAGetLastError()
+#else
+    #define ZeroOut(p, s)               ::memset((p), 0, (s))
+    #define GET_LAST_SOCKET_ERROR()     errno
+    void Sleep(unsigned ms);
+#endif
+
+void SocketErrorExit(const char * method);
 
 #endif // __UTILS_HPP
