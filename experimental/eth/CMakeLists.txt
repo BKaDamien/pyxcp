@@ -18,11 +18,12 @@ if(WIN32)
         win/iocp.cpp
 #        win/socket.cpp
         win/timestamp.cpp
+        utils.cpp
     )
 elseif(UNIX)
     add_library(eth
         linux/timestamp.cpp
-        linux/utils.cpp
+        utils.cpp
     )
 endif(WIN32)
 
