@@ -68,63 +68,6 @@ struct PerHandleData {
 
 };
 
-class PerIoData {
-
-public:
-
-    explicit PerIoData(size_t bufferSize) {
-        m_xferBuffer = NULL;
-        m_xferBuffer = new char[bufferSize];
-        m_wsabuf.buf = m_xferBuffer;
-
-        m_wsabuf.len = bufferSize;
-        m_bytesRemaining = 0;
-        m_bytes_to_xfer = 0;
-    }
-
-    PerIoData(const PerIoData&) = delete;
-    operator=(const PerIoData&) = delete;
-
-    ~PerIoData() {
-        if (m_xferBuffer) {
-            delete[] m_xferBuffer;
-        }
-    }
-
-    IoType get_opcode() const {
-        return m_opcode;
-    }
-
-    size_t get_bytes_to_xfer() const {
-
-    }
-
-    void decr_bytes_to_xfer(size_t amount) {
-        assert((static_cast<int64_t>(m_bytesRemaining) - static_cast<int64_t>(amount)) > 0);
-
-        m_bytesRemaining -= amount;
-    }
-
-    bool xfer_finished() const {
-        return m_bytesRemaining == 0;
-    }
-
-    void reset() {
-        ZeroOut(&m_overlapped, sizeof(OVERLAPPED));
-        m_wsabuf.len = 0;
-        m_bytesRemaining = 0;
-        m_bytes_to_xfer = 0;
-    }
-
-private:
-    OVERLAPPED m_overlapped;
-    IoType m_opcode;
-    WSABUF m_wsabuf;
-    char * m_xferBuffer;
-    size_t m_bytes_to_xfer;
-    size_t m_bytesRemaining;
-};
-
 struct ThreadType {
     HANDLE handle;
     DWORD id;

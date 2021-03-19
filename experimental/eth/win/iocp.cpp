@@ -23,6 +23,7 @@
  * s. FLOSS-EXCEPTION.txt
  */
 #include "iocp.hpp"
+#include "periodata.hpp"
 #include "socket.hpp"
 #include "exceptions.hpp"
 
@@ -42,8 +43,8 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter);
 
 IOCP::IOCP(DWORD numProcessors)
 {
-    m_port.handle  = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, static_cast<ULONG_PTR>(0), numProcessors);
-    if (m_port.handle == NULL) {
+    m_port.handle  = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, static_cast<ULONG_PTR>(0), numProcessors);
+    if (m_port.handle == nullptr) {
         throw OSException();
     }
 
@@ -54,7 +55,7 @@ IOCP::IOCP(DWORD numProcessors)
     HANDLE hThread;
 
     for (DWORD idx = 0; idx < m_numWorkerThreads; ++idx) {
-        hThread = ::CreateThread(NULL, 0, WorkerThread, reinterpret_cast<LPVOID>(this), 0, NULL);
+        hThread = ::CreateThread(nullptr, 0, WorkerThread, reinterpret_cast<LPVOID>(this), 0, nullptr);
         SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
         m_threads.push_back(hThread);
     }
@@ -66,7 +67,7 @@ IOCP::~IOCP()
     std::ldiv_t divres = std::ldiv(numThreads, MAXIMUM_WAIT_OBJECTS);
     DWORD rounds = static_cast<DWORD>(divres.quot);
     DWORD remaining = static_cast<DWORD>(divres.rem);
-    HANDLE * thrArray = NULL;
+    HANDLE * thrArray = nullptr;
     DWORD offset = 0;
     DWORD idx = 0;
 
@@ -103,7 +104,7 @@ bool IOCP::registerHandle(PerHandleData * object)
 
     handle = ::CreateIoCompletionPort(object->m_socket->getHandle(), m_port.handle, reinterpret_cast<ULONG_PTR>(object), 0);
     printf("Registered Handle: %p\n", handle);
-    if (handle == NULL) {
+    if (handle == nullptr) {
         throw OSException();
     }
     return (handle == m_port.handle);
@@ -111,7 +112,7 @@ bool IOCP::registerHandle(PerHandleData * object)
 
 void IOCP::postQuitMessage() const
 {
-    if (!::PostQueuedCompletionStatus(m_port.handle, 0, static_cast<ULONG_PTR>(NULL), NULL)) {
+    if (!::PostQueuedCompletionStatus(m_port.handle, 0, static_cast<ULONG_PTR>(NULL), nullptr)) {
         throw OSException();
     }
 }
@@ -123,7 +124,7 @@ HANDLE IOCP::getHandle() const
 
 void IOCP::postUserMessage() const
 {
-    ::PostQueuedCompletionStatus(m_port.handle, 0, static_cast<ULONG_PTR>(NULL), NULL);
+    ::PostQueuedCompletionStatus(m_port.handle, 0, static_cast<ULONG_PTR>(NULL), nullptr);
 }
 
 
@@ -132,10 +133,10 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter)
     IOCP const * const iocp = reinterpret_cast<IOCP const * const>(lpParameter);
     DWORD numBytesRecv = 0;
     ULONG_PTR CompletionKey;
-    PerIoData * iod = NULL;
-    PerHandleData * phd = NULL;
-    Socket * sock = NULL;
-    OVERLAPPED * olap = NULL;
+    PerIoData * iod = nullptr;
+    PerHandleData * phd = nullptr;
+    Socket * sock = nullptr;
+    OVERLAPPED * olap = nullptr;
     bool exitLoop = FALSE;
     static WSABUF wsaBuffer;
     DWORD flags = (DWORD)0;
@@ -172,7 +173,7 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter)
             }
         } else {
             error = GetLastError();
-            if (olap == NULL) {
+            if (olap == nullptr) {
 
             } else {
                 // Failed I/O operation.
@@ -208,7 +209,7 @@ void Socket::write(char * buf, unsigned int len)
             (LPSOCKADDR)&m_peerAddress,
             addrLen,
             (LPWSAOVERLAPPED)&iod->m_overlapped,
-            NULL
+            nullptr
         ) == SOCKET_ERROR) {
         }
     } else if (m_socktype == SOCK_STREAM) {
@@ -219,7 +220,7 @@ void Socket::write(char * buf, unsigned int len)
             &bytesWritten,
             0,
             (LPWSAOVERLAPPED)&iod->m_overlapped,
-            NULL) == SOCKET_ERROR) {
+            nullptr) == SOCKET_ERROR) {
             closesocket(m_socket);
         }
     }
@@ -248,7 +249,7 @@ void Socket::triggerRead(unsigned int len)
                     &numReceived,
                     &flags,
                     (LPWSAOVERLAPPED)&iod->m_overlapped,
-                    (LPWSAOVERLAPPED_COMPLETION_ROUTINE)NULL)  == SOCKET_ERROR) {
+                    (LPWSAOVERLAPPED_COMPLETION_ROUTINE)nullptr)  == SOCKET_ERROR) {
             err = WSAGetLastError();
             if (err != WSA_IO_PENDING) {
             }
@@ -263,7 +264,7 @@ void Socket::triggerRead(unsigned int len)
                     (LPSOCKADDR)&numReceived,
                     &addrLen,
                     (LPWSAOVERLAPPED)&iod->m_overlapped,
-                    (LPWSAOVERLAPPED_COMPLETION_ROUTINE)NULL)) {
+                    (LPWSAOVERLAPPED_COMPLETION_ROUTINE)nullptr)) {
             err = WSAGetLastError();
             if (err != WSA_IO_PENDING) {
             }

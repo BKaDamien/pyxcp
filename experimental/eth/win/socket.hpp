@@ -26,13 +26,9 @@
 #if !defined(__SOCKET_HPP)
 #define __SOCKET_HPP
 
+#include "isocket.hpp"
 #include "eth.hpp"
-//#include "isocket.hpp"
 
-struct CAddress {
-    int length;
-    struct sockaddr address;
-};
 
 class Socket : public ISocket {
 public:
@@ -67,9 +63,9 @@ private:
     SOCKET m_socket;
     SOCKADDR_STORAGE m_peerAddress;
 
-    PerIoData * m_acceptOlap;
-    PerIoData * m_recvOlap;
-    PerIoData * m_sendOlap;
+    //PerIoData * m_acceptOlap;
+    //PerIoData * m_recvOlap;
+    //PerIoData * m_sendOlap;
 };
 
 #endif  // __SOCKET_HPP
