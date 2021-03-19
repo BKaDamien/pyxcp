@@ -25,7 +25,7 @@
 #if !defined(__IOCP_HPP)
 #define __IOCP_HPP
 
-#include "eth.hpp"
+//#include "eth.hpp"
 #include "socket.hpp"
 #include <cassert>
 #include <cstdint>

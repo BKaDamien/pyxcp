@@ -27,6 +27,7 @@
 #define __SOCKET_HPP
 
 #include "eth.hpp"
+//#include "isocket.hpp"
 
 struct CAddress {
     int length;
@@ -62,7 +63,6 @@ private:
     int m_socktype;
     int m_protocol;
     bool m_connected;
-    IOCP * m_iocp;
     ADDRINFO * m_addr;
     SOCKET m_socket;
     SOCKADDR_STORAGE m_peerAddress;
