@@ -48,18 +48,29 @@ public:
 
 static WinSockBoilerplate boilerplate; // Ensure WinSock startup/shutdown.
 
-Socket::Socket(IOCP * iocp, int family, int socktype, int protocol, int options)
+Socket::Socket(int family, int socktype, int protocol, int options)
 {
+//    WSAPROTOCOL_INFO protocolInfo;
+//    bool connection_oriented = (socktype == SOCK_STREAM);
     m_family = family;
     m_socktype = socktype;
     m_protocol = protocol;
     m_connected = false;
-    m_iocp = iocp;
     m_addr = NULL;
     loadFunctions();
-    m_socket = ::WSASocket(family, socktype, protocol, NULL, 0, WSA_FLAG_OVERLAPPED | options);
+
+#if 0
+    ZeroOut(&protocolInfo, sizeof(WSAPROTOCOL_INFO));
+    protocolInfo.dwServiceFlags1  = XP1_GUARANTEED_DELIVERY | XP1_GUARANTEED_ORDER | XP1_GRACEFUL_CLOSE |
+        XP1_MESSAGE_ORIENTED | (connection_oriented ? 0: XP1_CONNECTIONLESS);
+#endif
+
+    m_socket = ::WSASocket(family, socktype, protocol, NULL /*&protocolInfo*/, 0, WSA_FLAG_OVERLAPPED | options);
+    if (m_socket == INVALID_SOCKET) {
+        SocketErrorExit("Socket::Socket()");
+    }
     printf("m_socket: %x %d\n", m_socket, m_socket == INVALID_SOCKET);
-    SecureZeroMemory(&m_peerAddress, sizeof(SOCKADDR_STORAGE));
+    ZeroOut(&m_peerAddress, sizeof(SOCKADDR_STORAGE));
 }
 
 Socket::~Socket()
@@ -104,7 +115,7 @@ bool Socket::bind(CAddress & address)
 {
 
     if (::bind(m_socket, &address.address, address.length) == SOCKET_ERROR) {
-        //Win_ErrorMsg("Socket::bind()", WSAGetLastError());
+        SocketErrorExit("Socket::bind()");
         return false;
     }
     return true;
@@ -113,24 +124,25 @@ bool Socket::bind(CAddress & address)
 bool Socket::connect(CAddress & address)
 {
     if (::connect(m_socket, &address.address, address.length) == SOCKET_ERROR) {
-        //Win_ErrorMsg("Socket::connect()", WSAGetLastError());
+        SocketErrorExit("Socket::connect()");
         return false;
     }
     PerHandleData handleData(HandleType::HANDLE_SOCKET, this);
-    m_iocp->registerHandle(&handleData);
+    //m_iocp->registerHandle(&handleData);
     m_connected = true;
     return true;
 }
 
 bool Socket::disconnect()
 {
-    //::disconnect();
+    m_connected == false; //::disconnect();
     return true;
 }
 
 bool Socket::listen(int backlog)
 {
     if (::listen(m_socket, backlog) == SOCKET_ERROR) {
+        SocketErrorExit("Socket::listen()");
         return false;
     }
     return true;
@@ -144,6 +156,7 @@ bool Socket::accept(CAddress & peerAddress)
     sock = ::accept(m_socket, (sockaddr *)&peerAddress.address, &peerAddress.length);
 
     if (sock  == INVALID_SOCKET) {
+        SocketErrorExit("Socket::accept()");
         return false;
     }
     return true;
@@ -156,7 +169,7 @@ bool Socket::getaddrinfo(int family, int socktype, int protocol, const char * ho
     ADDRINFO * t_addr;
     char port_str[16] = {0};
 
-    ::SecureZeroMemory(&hints, sizeof(hints));
+    ZeroOut(&hints, sizeof(hints));
     hints.ai_family = family;
     hints.ai_socktype = socktype;
     hints.ai_protocol = protocol;
@@ -165,7 +178,7 @@ bool Socket::getaddrinfo(int family, int socktype, int protocol, const char * ho
     ::sprintf(port_str, "%d", port);
     err = ::getaddrinfo(hostname, port_str, &hints, &t_addr);
     if (err != 0) {
-        //gai_strerror(err);
+        gai_strerror(err);
         ::freeaddrinfo(t_addr);
         return false;
     }
@@ -175,90 +188,5 @@ bool Socket::getaddrinfo(int family, int socktype, int protocol, const char * ho
 
     ::freeaddrinfo(t_addr);
     return true;
-}
-
-void Socket::write(char * buf, unsigned int len)
-{
-    DWORD bytesWritten;
-    int addrLen;
-    PerIoData * iod = new PerIoData(128);
-
-    iod->m_wsabuf.buf = buf;
-    iod->m_wsabuf.len = len;
-    iod->m_opcode = IoType::IO_WRITE;
-    iod->m_bytesRemaining = iod->m_bytesToXfer = len;
-    iod->reset();
-
-    if (m_socktype == SOCK_DGRAM) {
-        addrLen = sizeof(SOCKADDR_STORAGE);
-        if (::WSASendTo(m_socket,
-            &iod->m_wsabuf,
-            1,
-            &bytesWritten,
-            0,
-            (LPSOCKADDR)&m_peerAddress,
-            addrLen,
-            (LPWSAOVERLAPPED)&iod->m_overlapped,
-            NULL
-        ) == SOCKET_ERROR) {
-        }
-    } else if (m_socktype == SOCK_STREAM) {
-        if (::WSASend(
-            m_socket,
-            &iod->m_wsabuf,
-            1,
-            &bytesWritten,
-            0,
-            (LPWSAOVERLAPPED)&iod->m_overlapped,
-            NULL) == SOCKET_ERROR) {
-            closesocket(m_socket);
-        }
-    }
-}
-
-void Socket::triggerRead(unsigned int len)
-{
-    DWORD numReceived = (DWORD)0;
-    DWORD flags = (DWORD)0;
-    DWORD err = 0;
-    int addrLen;
-    static char buf[1024];
-
-    PerIoData * iod = new PerIoData(128);
-
-    iod->m_wsabuf.buf = buf;
-    iod->m_wsabuf.len = len;
-    iod->m_opcode = IoType::IO_READ;
-    iod->m_bytesRemaining = iod->m_bytesToXfer = len;
-    iod->reset();
-
-    if (m_socktype == SOCK_STREAM) {
-        if (WSARecv(m_socket,
-                    &iod->m_wsabuf,
-                    1,
-                    &numReceived,
-                    &flags,
-                    (LPWSAOVERLAPPED)&iod->m_overlapped,
-                    (LPWSAOVERLAPPED_COMPLETION_ROUTINE)NULL)  == SOCKET_ERROR) {
-            err = WSAGetLastError();
-            if (err != WSA_IO_PENDING) {
-            }
-        }
-    } else if (m_socktype == SOCK_DGRAM) {
-        addrLen = sizeof(SOCKADDR_STORAGE);
-        if (WSARecvFrom(m_socket,
-                    &iod->m_wsabuf,
-                    1,
-                    &numReceived,
-                    &flags,
-                    (LPSOCKADDR)&numReceived,
-                    &addrLen,
-                    (LPWSAOVERLAPPED)&iod->m_overlapped,
-                    (LPWSAOVERLAPPED_COMPLETION_ROUTINE)NULL)) {
-            err = WSAGetLastError();
-            if (err != WSA_IO_PENDING) {
-            }
-        }
-    }
 }
 

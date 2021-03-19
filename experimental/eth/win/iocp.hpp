@@ -26,9 +26,12 @@
 #define __IOCP_HPP
 
 #include "eth.hpp"
+#include "socket.hpp"
 #include <cassert>
 #include <cstdint>
 #include <vector>
+
+//#include "utils.hpp"
 
 #if !defined(__GNUC__)
 #pragma comment(lib,"ws2_32.lib") // MSVC only.
@@ -53,7 +56,6 @@ struct PerPortData {
     HANDLE handle;
 };
 
-class Socket;
 
 struct PerHandleData {
     HandleType m_handleType;
@@ -108,7 +110,7 @@ public:
     }
 
     void reset() {
-        ::SecureZeroMemory(&m_overlapped, sizeof(OVERLAPPED));
+        ZeroOut(&m_overlapped, sizeof(OVERLAPPED));
         m_wsabuf.len = 0;
         m_bytesRemaining = 0;
         m_bytes_to_xfer = 0;

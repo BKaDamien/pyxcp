@@ -18,6 +18,6 @@ using namespace std;
 int main(void)
 {
     auto iocp = IOCP();
-    auto sock = Socket(&iocp);
+    auto sock = Socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 }
 

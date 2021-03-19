@@ -51,11 +51,14 @@
     #include <netdb.h>
     #include <arpa/inet.h>
     #include <sys/wait.h>
-
-    #include "utils.hpp"
 #endif
-
+#include "isocket.hpp"
+#include "socket.hpp"
+#include "utils.hpp"
 #include "timestamp.hpp"
+#include "exceptions.hpp"
+
+#include "config.h"
 
 #endif // __ETH_HPP
 

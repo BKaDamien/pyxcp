@@ -26,17 +26,17 @@
 #if !defined(__SOCKET_HPP)
 #define __SOCKET_HPP
 
-#include "iocp.hpp"
+#include "eth.hpp"
 
 struct CAddress {
     int length;
     struct sockaddr address;
 };
 
-class Socket {
+class Socket : public ISocket {
 public:
 
-    Socket(IOCP * iocp, int family = PF_INET, int socktype = SOCK_STREAM, int protocol = IPPROTO_TCP, int options = 0);
+    Socket(int family = PF_INET, int socktype = SOCK_STREAM, int protocol = IPPROTO_TCP, int options = 0);
     Socket(const Socket&) = default;
     operator=(const Socket&) = delete;
     ~Socket();

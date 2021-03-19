@@ -185,3 +185,89 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter)
     ExitThread(0);
 }
 
+#if 0
+void Socket::write(char * buf, unsigned int len)
+{
+    DWORD bytesWritten;
+    int addrLen;
+    PerIoData * iod = new PerIoData(128);
+
+    iod->m_wsabuf.buf = buf;
+    iod->m_wsabuf.len = len;
+    iod->m_opcode = IoType::IO_WRITE;
+    iod->m_bytesRemaining = iod->m_bytesToXfer = len;
+    iod->reset();
+
+    if (m_socktype == SOCK_DGRAM) {
+        addrLen = sizeof(SOCKADDR_STORAGE);
+        if (::WSASendTo(m_socket,
+            &iod->m_wsabuf,
+            1,
+            &bytesWritten,
+            0,
+            (LPSOCKADDR)&m_peerAddress,
+            addrLen,
+            (LPWSAOVERLAPPED)&iod->m_overlapped,
+            NULL
+        ) == SOCKET_ERROR) {
+        }
+    } else if (m_socktype == SOCK_STREAM) {
+        if (::WSASend(
+            m_socket,
+            &iod->m_wsabuf,
+            1,
+            &bytesWritten,
+            0,
+            (LPWSAOVERLAPPED)&iod->m_overlapped,
+            NULL) == SOCKET_ERROR) {
+            closesocket(m_socket);
+        }
+    }
+}
+
+void Socket::triggerRead(unsigned int len)
+{
+    DWORD numReceived = (DWORD)0;
+    DWORD flags = (DWORD)0;
+    DWORD err = 0;
+    int addrLen;
+    static char buf[1024];
+
+    PerIoData * iod = new PerIoData(128);
+
+    iod->m_wsabuf.buf = buf;
+    iod->m_wsabuf.len = len;
+    iod->m_opcode = IoType::IO_READ;
+    iod->m_bytesRemaining = iod->m_bytesToXfer = len;
+    iod->reset();
+
+    if (m_socktype == SOCK_STREAM) {
+        if (WSARecv(m_socket,
+                    &iod->m_wsabuf,
+                    1,
+                    &numReceived,
+                    &flags,
+                    (LPWSAOVERLAPPED)&iod->m_overlapped,
+                    (LPWSAOVERLAPPED_COMPLETION_ROUTINE)NULL)  == SOCKET_ERROR) {
+            err = WSAGetLastError();
+            if (err != WSA_IO_PENDING) {
+            }
+        }
+    } else if (m_socktype == SOCK_DGRAM) {
+        addrLen = sizeof(SOCKADDR_STORAGE);
+        if (WSARecvFrom(m_socket,
+                    &iod->m_wsabuf,
+                    1,
+                    &numReceived,
+                    &flags,
+                    (LPSOCKADDR)&numReceived,
+                    &addrLen,
+                    (LPWSAOVERLAPPED)&iod->m_overlapped,
+                    (LPWSAOVERLAPPED_COMPLETION_ROUTINE)NULL)) {
+            err = WSAGetLastError();
+            if (err != WSA_IO_PENDING) {
+            }
+        }
+    }
+}
+#endif
