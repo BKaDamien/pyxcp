@@ -53,7 +53,7 @@
     #include <sys/wait.h>
 #endif
 
-//#include "socket.hpp"
+#include "socket.hpp"
 #include "utils.hpp"
 #include "timestamp.hpp"
 #include "exceptions.hpp"

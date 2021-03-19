@@ -36,8 +36,6 @@ struct CAddress {
 
 class ISocket {
 public:
-    ISocket(const ISocket&) = delete;
-    operator=(const ISocket&) = delete;
     ~ISocket() = default;
 
     virtual void getOption(int option, char * optval, int * optlen) = 0;

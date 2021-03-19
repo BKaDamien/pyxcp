@@ -1,6 +1,7 @@
 
-#include "socket.hpp"
+
 #include "eth.hpp"
+#include "socket.hpp"
 
 #include <iomanip>
 #include <iostream>
@@ -18,6 +19,6 @@ using namespace std;
 int main(void)
 {
     auto iocp = IOCP();
-    auto sock = Socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    auto sock = Socket {PF_INET, SOCK_STREAM, IPPROTO_TCP};
 }
 

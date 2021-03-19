@@ -35,7 +35,7 @@ public:
 
     Socket(int family = PF_INET, int socktype = SOCK_STREAM, int protocol = IPPROTO_TCP, int options = 0);
     Socket(const Socket&) = default;
-    operator=(const Socket&) = delete;
+    //operator=(const Socket&) = delete;
     ~Socket();
 
     void getOption(int option, char * optval, int * optlen);

@@ -24,6 +24,7 @@
  */
 #include <cstdio>
 #include "exceptions.hpp"
+#include "eth.hpp"
 #include "socket.hpp"
 
 #include <MSWSock.h>

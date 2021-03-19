@@ -25,13 +25,11 @@
 #if !defined(__IOCP_HPP)
 #define __IOCP_HPP
 
-//#include "eth.hpp"
+#include "eth.hpp"
 #include "socket.hpp"
 #include <cassert>
 #include <cstdint>
 #include <vector>
-
-//#include "utils.hpp"
 
 #if !defined(__GNUC__)
 #pragma comment(lib,"ws2_32.lib") // MSVC only.
