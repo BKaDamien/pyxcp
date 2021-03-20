@@ -57,13 +57,11 @@ struct PerPortData {
 
 struct PerHandleData {
     HandleType m_handleType;
-    Socket * m_socket;
+    HANDLE m_handle;
     DWORD m_seqNoSend;
     DWORD m_seqNoRecv;
 
-    PerHandleData(HandleType handleType, Socket * socket) : m_handleType(handleType),
-        m_socket(socket), m_seqNoSend(0), m_seqNoRecv(0) {}
-
+    PerHandleData(HandleType handleType, const HANDLE& handle) : m_handleType(handleType), m_handle(handle), m_seqNoSend(0), m_seqNoRecv(0) {}
 };
 
 struct ThreadType {
@@ -75,7 +73,7 @@ class IOCP {
 public:
     IOCP(DWORD numProcessors = 0);
     ~IOCP();
-    bool registerHandle(PerHandleData * object);
+    bool registerHandle(const PerHandleData& object);
     void postUserMessage() const;
     void postQuitMessage() const;
     HANDLE getHandle() const;

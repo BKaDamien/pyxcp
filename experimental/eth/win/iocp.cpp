@@ -98,11 +98,11 @@ IOCP::~IOCP()
     CloseHandle(m_port.handle);
 }
 
-bool IOCP::registerHandle(PerHandleData * object)
+bool IOCP::registerHandle(const PerHandleData& object)
 {
     HANDLE handle;
 
-    handle = ::CreateIoCompletionPort(object->m_socket->getHandle(), m_port.handle, reinterpret_cast<ULONG_PTR>(object), 0);
+    handle = ::CreateIoCompletionPort(object.m_handle, m_port.handle, reinterpret_cast<ULONG_PTR>(&object), 0);
     printf("Registered Handle: %p\n", handle);
     if (handle == nullptr) {
         throw OSException();
@@ -155,7 +155,7 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter)
                 switch (iod->get_opcode()) {
                     case IoType::IO_WRITE:
                         iod->decr_bytes_to_xfer(numBytesRecv);
-                        phd->m_socket->triggerRead(1024);
+//                        phd->m_socket->triggerRead(1024);
                         if (iod->xfer_finished()) {
                             delete iod;
                         } else {

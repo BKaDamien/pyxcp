@@ -128,7 +128,7 @@ bool Socket::connect(CAddress & address)
         SocketErrorExit("Socket::connect()");
         return false;
     }
-    PerHandleData handleData(HandleType::HANDLE_SOCKET, this);
+    PerHandleData handleData(HandleType::HANDLE_SOCKET, getHandle());
     //m_iocp->registerHandle(&handleData);
     m_connected = true;
     return true;
