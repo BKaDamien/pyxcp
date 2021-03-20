@@ -29,12 +29,15 @@
 #if defined(_WIN32)
     #define ZeroOut(p, s)               ::SecureZeroMemory((p), (s))
     #define GET_LAST_SOCKET_ERROR()     WSAGetLastError()
+    #define GET_LAST_ERROR()            GetLastError()
 #else
     #define ZeroOut(p, s)               ::memset((p), 0, (s))
     #define GET_LAST_SOCKET_ERROR()     errno
+    #define GET_LAST_ERROR()            errno
     void Sleep(unsigned ms);
 #endif
 
 void SocketErrorExit(const char * method);
+void OsErrorExit(const char * method);
 
 #endif // __UTILS_HPP

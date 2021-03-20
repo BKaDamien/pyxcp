@@ -32,6 +32,11 @@ void SocketErrorExit(const char * method)
     exit(1);
 }
 
+void OsErrorExit(const char * method)
+{
+    fprintf(stderr, "%s failed with: %d\n", method, GET_LAST_ERROR());
+    exit(1);
+}
 
 #if !defined(_WIN32)
 /*
