@@ -3,6 +3,7 @@
 #include "pool.hpp"
 
 #include <iostream>
+#include <cassert>
 
 
 typedef Pool<MemoryBlock<char, 64>, 8> Pool_t;
@@ -11,6 +12,7 @@ void acquire_memory_blocks(Pool_t& pool)
 {
 	for (int i = 0; i < 8; ++i) {
 		auto obj = pool.acquire();
+        pool.release(obj);
 	}
 	// Blocks should be released.
 }

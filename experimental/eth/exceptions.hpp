@@ -47,5 +47,10 @@ struct CapacityExhaustedException : public std::exception {
     }
 };
 
+struct InvalidObjectException : public std::exception {
+    const char * what () const throw() {
+        return "Invalid Object Exception";
+    }
+};
 #endif // __EXCEPTIONS_HPP
 
