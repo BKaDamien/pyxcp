@@ -16,7 +16,6 @@ message(STATUS ${MY_INCLUDES})
 if(WIN32)
     add_library(eth
         win/iocp.cpp
-        win/socket.cpp
         utils.cpp
     )
 elseif(UNIX)
