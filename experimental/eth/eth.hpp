@@ -60,5 +60,32 @@
 
 #include "config.h"
 
+#if defined(_WIN32)
+
+struct Eth {
+
+    Eth() {
+        WSAData data;
+        if (WSAStartup(MAKEWORD(2, 2), &data) != 0) {
+            throw OSException();
+        }
+        printf("WSA OK!!!\n");
+    }
+
+    ~Eth() {
+        WSACleanup();
+    }
+};
+
+#else
+
+struct Eth {
+
+    Eth() = default;
+    ~Eth() = default;
+};
+
+#endif
+
 #endif // __ETH_HPP
 
