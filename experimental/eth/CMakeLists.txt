@@ -22,7 +22,6 @@ if(WIN32)
 elseif(UNIX)
     add_library(eth
         utils.cpp
-        poolmgr.cpp
     )
 endif(WIN32)
 
