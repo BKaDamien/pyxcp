@@ -38,20 +38,12 @@ class ISocket {
 public:
     ~ISocket() = default;
 
-    virtual void getOption(int option, char * optval, int * optlen) = 0;
-    virtual void setOption(int option, const char * optval, int optlen) = 0;
+    virtual void connect(CAddress & address) = 0;
+    virtual void bind(CAddress & address) = 0;
+    virtual void listen(int backlog = 10) = 0;
+    virtual void accept(CAddress & peerAddress) = 0;
+    virtual void option(int optname, int level, int * value) = 0;
     virtual bool getaddrinfo(int family, int socktype, int protocol, const char * hostname, int port, CAddress & address, int flags = AI_PASSIVE) = 0;
-    virtual bool connect(CAddress & address) = 0;
-    virtual bool disconnect() = 0;
-    virtual bool bind(CAddress & address) = 0;
-    virtual bool listen(int backlog = 10) = 0;
-    virtual bool accept(CAddress & peerAddress) = 0;
-
-private:
-    int m_family;
-    int m_socktype;
-    int m_protocol;
-    bool m_connected;
 };
 
 #endif  // __ISOCKET_HPP
