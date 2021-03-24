@@ -44,7 +44,7 @@ public:
     PoolManager() = default;
     ~PoolManager() = default;
 
-    const IodPool_t& get_iod() const {
+    IodPool_t& get_iod() const {
         return m_iod_pool;
     }
 
