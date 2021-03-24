@@ -17,10 +17,12 @@ if(WIN32)
     add_library(eth
         win/iocp.cpp
         utils.cpp
+        poolmgr.cpp
     )
 elseif(UNIX)
     add_library(eth
         utils.cpp
+        poolmgr.cpp
     )
 endif(WIN32)
 
