@@ -28,12 +28,17 @@
 
 #include <array>
 
+#include <WinSock2.h>
+#include <Ws2tcpip.h>
+#include <Mstcpip.h>
+#include <MSWSock.h>
+#include <Windows.h>
+
 #include "isocket.hpp"
 #include "periodata.hpp"
 #include "perhandledata.hpp"
 #include "pool.hpp"
 #include "poolmgr.hpp"
-#include "eth.hpp"
 
 
 class Socket : public ISocket {
@@ -132,7 +137,8 @@ public:
         PerIoData * iod;
 
         if (alloc == true) {
-            iod = m_iod_pool.acquire();
+            iod = m_pool_mgr.get_iod().acquire();
+            //iod = m_iod_pool.acquire();
         }
         iod->reset();
         iod->set_buffer(arr);
@@ -184,7 +190,6 @@ private:
     SOCKET m_socket;
     //CAddress ourAddress;
     SOCKADDR_STORAGE m_peerAddress;
-    static Pool_t m_iod_pool;
 };
 
 #endif  // __SOCKET_HPP

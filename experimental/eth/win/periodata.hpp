@@ -27,8 +27,8 @@
 
 #include <array>
 #include <cassert>
-#include "eth.hpp"
 #include "utils.hpp"
+#include <WinSock2.h>
 
 enum class IoType {
     IO_ACCEPT,

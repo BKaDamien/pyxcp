@@ -26,7 +26,10 @@
 #define __TIMESTAMP_HPP
 
 #include <cstdint>
-#include "eth.hpp"
+
+#if defined(_WIN32)
+    #include <Windows.h>
+#endif
 
 class Timestamp {
 public:

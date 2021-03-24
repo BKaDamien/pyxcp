@@ -25,9 +25,9 @@
 #if !defined(__IOCP_HPP)
 #define __IOCP_HPP
 
-#include "eth.hpp"
 #include "socket.hpp"
 #include "perhandledata.hpp"
+#include "periodata.hpp"
 #include <cassert>
 #include <cstdint>
 #include <vector>
@@ -37,11 +37,9 @@
 #endif
 
 
-
 struct PerPortData {
     HANDLE handle;
 };
-
 
 class IOCP {
 public:

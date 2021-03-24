@@ -22,8 +22,8 @@
  *
  * s. FLOSS-EXCEPTION.txt
  */
+
 #include "iocp.hpp"
-#include "periodata.hpp"
 #include "socket.hpp"
 #include "exceptions.hpp"
 

@@ -25,11 +25,7 @@
 #if !defined(__PERHANDLEDATA_HPP)
 #define __PERHANDLEDATA_HPP
 
-//#include <array>
-//#include <cassert>
-#include "eth.hpp"
-//#include "utils.hpp"
-
+#include <Windows.h>
 
 enum class HandleType {
     HANDLE_SOCKET,

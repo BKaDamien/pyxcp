@@ -26,8 +26,6 @@
 #if !defined(__ISOCKET_HPP)
 #define __ISOCKET_HPP
 
-#include "eth.hpp"
-
 struct CAddress {
     int length;
     struct sockaddr address;

@@ -23,9 +23,9 @@
  * s. FLOSS-EXCEPTION.txt
  */
 
-#include "poolmgr.h"
+#include "poolmgr.hpp"
 
 
 
-PoolMgr::IodPool_t PoolMgr::m_iod_pool; // Initialization of static member.
+PoolManager::IodPool_t PoolManager::m_iod_pool; // Initialization of static member.
 

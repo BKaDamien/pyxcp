@@ -26,13 +26,7 @@
 #define __ETH_HPP
 
 #if defined(_WIN32)
-    #include <WinSock2.h>
-    #include <Ws2tcpip.h>
-    #include <Mstcpip.h>
-    #include <MSWSock.h>
-    #include <Windows.h>
 
-    #include "iocp.hpp"
 #else
     #include <ctype.h>
     #include <errno.h>
