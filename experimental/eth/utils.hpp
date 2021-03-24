@@ -37,6 +37,12 @@
     void Sleep(unsigned ms);
 #endif
 
+#if defined(NDEBUG)
+    #define DBG_PRINT(...)
+#else
+    #define DBG_PRINT(...)              printf(VA_ARGS)
+#endif
+
 void SocketErrorExit(const char * method);
 void OsErrorExit(const char * method);
 

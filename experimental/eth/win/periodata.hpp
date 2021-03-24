@@ -25,11 +25,23 @@
 #if !defined(__PERIODATA_HPP)
 #define __PERIODATA_HPP
 
+#include <array>
+#include <cassert>
+#include "eth.hpp"
+#include "utils.hpp"
+
+enum class IoType {
+    IO_ACCEPT,
+    IO_CONNECT,
+    IO_READ,
+    IO_WRITE
+};
+
 class PerIoData {
 
 public:
 
-    explicit PerIoData(size_t bufferSize) {
+    explicit PerIoData(size_t bufferSize = 128) {
         m_xferBuffer = nullptr;
         m_xferBuffer = new char[bufferSize];
         m_wsabuf.buf = m_xferBuffer;
@@ -39,31 +51,56 @@ public:
         m_bytes_to_xfer = 0;
     }
 
-    PerIoData(const PerIoData&) = delete;
-    operator=(const PerIoData&) = delete;
-
     ~PerIoData() {
         if (m_xferBuffer) {
             delete[] m_xferBuffer;
         }
     }
 
+    void setup_write_request() {
+
+    }
+
+    void set_opcode(IoType opcode) {
+        m_opcode = opcode;
+    }
+
+    template <typename T, size_t N> void set_buffer(std::array<T, N>& arr) {
+
+        m_wsabuf.buf = arr.data();
+        m_wsabuf.len = arr.size();
+        printf("Bx: %s[%d]\n", m_wsabuf.buf, m_wsabuf.len);
+    }
+
+    WSABUF * get_buffer() {
+        return &m_wsabuf;
+    }
+
     IoType get_opcode() const {
         return m_opcode;
     }
 
-    size_t get_bytes_to_xfer() const {
+    void set_transfer_length(size_t length) {
+        m_bytesRemaining = m_bytes_to_xfer = length;
+    }
 
+    size_t get_bytes_to_xfer() const {
+        return m_bytes_to_xfer;
     }
 
     void decr_bytes_to_xfer(size_t amount) {
-        assert((static_cast<int64_t>(m_bytesRemaining) - static_cast<int64_t>(amount)) > 0);
+        printf("remaining: %d amount: %d\n",m_bytesRemaining, amount);
+        assert((static_cast<int64_t>(m_bytesRemaining) - static_cast<int64_t>(amount)) >= 0);
 
         m_bytesRemaining -= amount;
     }
 
     bool xfer_finished() const {
         return m_bytesRemaining == 0;
+    }
+
+    OVERLAPPED * get_overlapped() {
+        return &m_overlapped;
     }
 
     void reset() {

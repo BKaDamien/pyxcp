@@ -41,14 +41,13 @@
 
 static DWORD WINAPI WorkerThread(LPVOID lpParameter);
 
-IOCP::IOCP(DWORD numProcessors)
+IOCP::IOCP(size_t numProcessors, size_t multiplier)
 {
-    m_port.handle  = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, static_cast<ULONG_PTR>(0), numProcessors);
+    m_numWorkerThreads = numProcessors * multiplier;
+    m_port.handle  = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, static_cast<ULONG_PTR>(0), m_numWorkerThreads);
     if (m_port.handle == nullptr) {
-        throw OSException();
+        OsErrorExit("IOCP::IOCP()");
     }
-
-    m_numWorkerThreads = numProcessors * 2; // Hard-coded for now.
 
     m_threads.reserve(m_numWorkerThreads);
 
@@ -56,7 +55,7 @@ IOCP::IOCP(DWORD numProcessors)
 
     for (DWORD idx = 0; idx < m_numWorkerThreads; ++idx) {
         hThread = ::CreateThread(nullptr, 0, WorkerThread, reinterpret_cast<LPVOID>(this), 0, nullptr);
-        SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
+        ::SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
         m_threads.push_back(hThread);
     }
 }
@@ -78,9 +77,9 @@ IOCP::~IOCP()
         for (idx = 0; idx < MAXIMUM_WAIT_OBJECTS; ++idx) {
             thrArray[idx] = m_threads.at(idx + offset);
         }
-        WaitForMultipleObjects(MAXIMUM_WAIT_OBJECTS, thrArray, TRUE, INFINITE);
+        ::WaitForMultipleObjects(MAXIMUM_WAIT_OBJECTS, thrArray, TRUE, INFINITE);
         for (idx = 0; idx < MAXIMUM_WAIT_OBJECTS; ++idx) {
-            CloseHandle(thrArray[idx]);
+            ::CloseHandle(thrArray[idx]);
         }
         offset += MAXIMUM_WAIT_OBJECTS;
     }
@@ -89,31 +88,40 @@ IOCP::~IOCP()
         for (idx = 0; idx < remaining; ++idx) {
             thrArray[idx] = m_threads.at(idx + offset);
         }
-        WaitForMultipleObjects(remaining, thrArray, TRUE, INFINITE);
+        ::WaitForMultipleObjects(remaining, thrArray, TRUE, INFINITE);
         for (idx = 0; idx < remaining; ++idx) {
-            CloseHandle(thrArray[idx]);
+            ::CloseHandle(thrArray[idx]);
         }
     }
     delete[] thrArray;
-    CloseHandle(m_port.handle);
+    ::CloseHandle(m_port.handle);
 }
 
-bool IOCP::registerHandle(const PerHandleData& object)
+void IOCP::registerHandle(const PerHandleData& object) const
 {
     HANDLE handle;
+    bool ok;
 
     handle = ::CreateIoCompletionPort(object.m_handle, m_port.handle, reinterpret_cast<ULONG_PTR>(&object), 0);
-    printf("Registered Handle: %p\n", handle);
-    if (handle == nullptr) {
-        throw OSException();
+    ok = (handle == m_port.handle);
+    if ((handle == nullptr) || (!ok)) {
+        OsErrorExit("IOCP::registerHandle()");
     }
-    return (handle == m_port.handle);
+}
+
+
+void IOCP::registerSocket(const Socket& socket) const
+{
+    auto handleData = PerHandleData(HandleType::HANDLE_SOCKET, socket.getHandle());
+
+    registerHandle(handleData);
+
 }
 
 void IOCP::postQuitMessage() const
 {
     if (!::PostQueuedCompletionStatus(m_port.handle, 0, static_cast<ULONG_PTR>(NULL), nullptr)) {
-        throw OSException();
+        OsErrorExit("IOCP::postQuitMessage()");
     }
 }
 
@@ -131,30 +139,30 @@ void IOCP::postUserMessage() const
 static DWORD WINAPI WorkerThread(LPVOID lpParameter)
 {
     IOCP const * const iocp = reinterpret_cast<IOCP const * const>(lpParameter);
-    DWORD numBytesRecv = 0;
-    ULONG_PTR CompletionKey;
+    DWORD bytesTransfered = 0;
+    ULONG_PTR completionKey;
     PerIoData * iod = nullptr;
     PerHandleData * phd = nullptr;
     Socket * sock = nullptr;
     OVERLAPPED * olap = nullptr;
-    bool exitLoop = FALSE;
+    bool exitLoop = false;
     static WSABUF wsaBuffer;
-    DWORD flags = (DWORD)0;
+    DWORD flags = 0;
     DWORD error;
 
-    printf("Entering thread with [%p] [%d]...\n", iocp, iocp->getHandle());
+    printf("Entering worker thread %d.\n", ::GetCurrentThreadId());
     while (!exitLoop) {
-        if (::GetQueuedCompletionStatus(iocp->getHandle(), &numBytesRecv, &CompletionKey, (LPOVERLAPPED*)&olap, INFINITE)) {
-            if ((numBytesRecv == 0) &&  (CompletionKey == static_cast<ULONG_PTR>(NULL))) {
+        if (::GetQueuedCompletionStatus(iocp->getHandle(), &bytesTransfered, &completionKey, (LPOVERLAPPED*)&olap, INFINITE)) {
+            if ((bytesTransfered == 0) &&  (completionKey == static_cast<ULONG_PTR>(NULL))) {
                 iocp->postQuitMessage();    // "Broadcast"
-                exitLoop = TRUE;
+                exitLoop = true;
             } else {
-                phd = reinterpret_cast<PerHandleData *>(CompletionKey);
+                phd = reinterpret_cast<PerHandleData *>(completionKey);
                 iod = reinterpret_cast<PerIoData* >(olap);
-                printf("\tOPCODE: %d bytes: %d\n", iod->get_opcode(), numBytesRecv);
+                printf("\tOPCODE: %d bytes: %d\n", iod->get_opcode(), bytesTransfered);
                 switch (iod->get_opcode()) {
                     case IoType::IO_WRITE:
-                        iod->decr_bytes_to_xfer(numBytesRecv);
+                        iod->decr_bytes_to_xfer(bytesTransfered);
 //                        phd->m_socket->triggerRead(1024);
                         if (iod->xfer_finished()) {
                             delete iod;
@@ -165,14 +173,14 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter)
                         }
                         break;
                     case IoType::IO_READ:
-                        printf("IO_READ() numBytes: %d\n", numBytesRecv);
+                        printf("IO_READ() numBytes: %d\n", bytesTransfered);
                         break;
                     case IoType::IO_ACCEPT:
                         break;
                 }
             }
         } else {
-            error = GetLastError();
+            error = ::GetLastError();
             if (olap == nullptr) {
 
             } else {
@@ -182,49 +190,12 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter)
             //Win_ErrorMsg("IOWorkerThread::GetQueuedCompletionStatus()", error);
         }
     }
-    printf("Exiting thread...\n");
-    ExitThread(0);
+    printf("Exiting worker thread %d\n", ::GetCurrentThreadId());
+    ::ExitThread(0);
 }
 
 #if 0
-void Socket::write(char * buf, unsigned int len)
-{
-    DWORD bytesWritten;
-    int addrLen;
-    PerIoData * iod = new PerIoData(128);
 
-    iod->m_wsabuf.buf = buf;
-    iod->m_wsabuf.len = len;
-    iod->m_opcode = IoType::IO_WRITE;
-    iod->m_bytesRemaining = iod->m_bytesToXfer = len;
-    iod->reset();
-
-    if (m_socktype == SOCK_DGRAM) {
-        addrLen = sizeof(SOCKADDR_STORAGE);
-        if (::WSASendTo(m_socket,
-            &iod->m_wsabuf,
-            1,
-            &bytesWritten,
-            0,
-            (LPSOCKADDR)&m_peerAddress,
-            addrLen,
-            (LPWSAOVERLAPPED)&iod->m_overlapped,
-            nullptr
-        ) == SOCKET_ERROR) {
-        }
-    } else if (m_socktype == SOCK_STREAM) {
-        if (::WSASend(
-            m_socket,
-            &iod->m_wsabuf,
-            1,
-            &bytesWritten,
-            0,
-            (LPWSAOVERLAPPED)&iod->m_overlapped,
-            nullptr) == SOCKET_ERROR) {
-            closesocket(m_socket);
-        }
-    }
-}
 
 void Socket::triggerRead(unsigned int len)
 {
@@ -252,6 +223,7 @@ void Socket::triggerRead(unsigned int len)
                     (LPWSAOVERLAPPED_COMPLETION_ROUTINE)nullptr)  == SOCKET_ERROR) {
             err = WSAGetLastError();
             if (err != WSA_IO_PENDING) {
+
             }
         }
     } else if (m_socktype == SOCK_DGRAM) {
@@ -267,8 +239,17 @@ void Socket::triggerRead(unsigned int len)
                     (LPWSAOVERLAPPED_COMPLETION_ROUTINE)nullptr)) {
             err = WSAGetLastError();
             if (err != WSA_IO_PENDING) {
+
             }
         }
     }
 }
+
+typedef std::function<void(DWORD transferred)> CompleteHandler_t;
+
+class AsyncIoServiceFactory {
+
+};
+
 #endif
+

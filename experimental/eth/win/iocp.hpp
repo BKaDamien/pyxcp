@@ -27,6 +27,7 @@
 
 #include "eth.hpp"
 #include "socket.hpp"
+#include "perhandledata.hpp"
 #include <cassert>
 #include <cstdint>
 #include <vector>
@@ -36,47 +37,24 @@
 #endif
 
 
-enum class HandleType {
-    HANDLE_SOCKET,
-    HANDLE_FILE,
-    HANDLE_NAMED_PIPE,
-    HANDLE_USER,
-};
-
-enum class IoType {
-    IO_ACCEPT,
-    IO_CONNECT,
-    IO_READ,
-    IO_WRITE
-};
 
 struct PerPortData {
     HANDLE handle;
 };
 
 
-struct PerHandleData {
-    HandleType m_handleType;
-    HANDLE m_handle;
-    DWORD m_seqNoSend;
-    DWORD m_seqNoRecv;
-
-    PerHandleData(HandleType handleType, const HANDLE& handle) : m_handleType(handleType), m_handle(handle), m_seqNoSend(0), m_seqNoRecv(0) {}
-};
-
-struct ThreadType {
-    HANDLE handle;
-    DWORD id;
-};
-
 class IOCP {
 public:
-    IOCP(DWORD numProcessors = 0);
+    IOCP(size_t numProcessors = 1, size_t multiplier = 1);
     ~IOCP();
-    bool registerHandle(const PerHandleData& object);
+    void registerSocket(const Socket& socket) const;
     void postUserMessage() const;
     void postQuitMessage() const;
     HANDLE getHandle() const;
+
+protected:
+     void registerHandle(const PerHandleData& object) const;
+
 private:
     PerPortData m_port;
     DWORD m_numWorkerThreads;
