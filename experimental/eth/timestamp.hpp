@@ -100,8 +100,6 @@ private:
         return temp;
     }
 
-
-    struct timespec diff(const struct timespec& start, const struct timespec& end) const;
     struct timespec m_starting_time;
 
 #endif
