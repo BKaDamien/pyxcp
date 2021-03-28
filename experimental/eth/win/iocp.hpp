@@ -28,6 +28,7 @@
 #include "socket.hpp"
 #include "perhandledata.hpp"
 #include "periodata.hpp"
+#include "poolmgr.hpp"
 #include <cassert>
 #include <cstdint>
 #include <vector>
@@ -57,6 +58,7 @@ private:
     PerPortData m_port;
     DWORD m_numWorkerThreads;
     std::vector<HANDLE> m_threads;
+    PoolManager m_pool_mgr;
 };
 
 #endif // __IOCP_HPP

@@ -143,11 +143,8 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter)
     ULONG_PTR completionKey;
     PerIoData * iod = nullptr;
     PerHandleData * phd = nullptr;
-    Socket * sock = nullptr;
     OVERLAPPED * olap = nullptr;
     bool exitLoop = false;
-    static WSABUF wsaBuffer;
-    DWORD flags = 0;
     DWORD error;
 
     printf("Entering worker thread %d.\n", ::GetCurrentThreadId());
