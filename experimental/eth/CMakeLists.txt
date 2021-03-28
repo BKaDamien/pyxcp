@@ -19,10 +19,13 @@ if(WIN32)
         utils.cpp
         poolmgr.cpp
     )
+    set(ADD_LIBS ws2_32)
 elseif(UNIX)
     add_library(eth
         utils.cpp
+        linux/epoll.cpp
     )
+    set(ADD_LIBS pthread rt)
 endif(WIN32)
 
 target_include_directories(eth PUBLIC . ${_PS})
@@ -35,15 +38,15 @@ target_include_directories(
 )
 target_link_libraries(test_timestamp eth)
 
-if (WIN32)
+#if (WIN32)
 add_executable(test_basic_socket tests/test_basic_socket.cpp)
 target_include_directories(
     test_basic_socket PUBLIC
     ${eth_booster_SOURCE_DIR}
     ${eth_booster_SOURCE_DIR}/${_PS}
 )
-target_link_libraries(test_basic_socket eth ws2_32)
-endif(WIN32)
+target_link_libraries(test_basic_socket eth ${ADD_LIBS})
+#endif(WIN32)
 
 add_executable(test_pool tests/test_pool.cpp)
 target_include_directories(
