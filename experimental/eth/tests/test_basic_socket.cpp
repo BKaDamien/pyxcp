@@ -2,7 +2,7 @@
 
 #include "eth.hpp"
 #include "socket.hpp"
-#include "iocp.hpp"
+#include "asynchiofactory.hpp"
 
 #include <iomanip>
 #include <iostream>
@@ -24,11 +24,12 @@ int main(void)
 {
 
     CAddress address;
-    auto iocp = IOCP();
+    auto asio = createAsyncIoService();
     auto sock = Socket {PF_INET, SOCK_STREAM, IPPROTO_TCP};
-    iocp.registerSocket(sock);
+    asio->registerSocket(sock);
 
-    sock.getaddrinfo(PF_INET, SOCK_STREAM, IPPROTO_TCP, "localhost", 50007, address, 0);
+    //sock.getaddrinfo(PF_INET, SOCK_STREAM, IPPROTO_TCP, "localhost", 50007, address, 0);
+    sock.getaddrinfo(PF_INET, SOCK_STREAM, IPPROTO_TCP, "192.168.168.100", 50007, address, 0);
     sock.connect(address);
     //sock.getaddrinfo(PF_INET, SOCK_STREAM, IPPROTO_TCP, "google.de", 80, address, 0);
     //printf("addr: %x", address.address);

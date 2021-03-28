@@ -23,29 +23,28 @@
  * s. FLOSS-EXCEPTION.txt
  */
 
-/*
- *
- * Interface for asynchronous I/O services (IOCP, epoll, kqueue...).
- *
- *
- */
+#if !defined(__ASYNCHIOFACTORY_HPP)
+#define __ASYNCHIOFACTORY_HPP
 
-#if !defined(__IASYNCHIOSERVICE_HPP)
-#define __IASYNCHIOSERVICE_HPP
+#include <memory>
 
-#include <cstdlib>
+#include "iasyncioservice.hpp"
 
-#include "socket.hpp"
+#if defined(_WIN32)
+    #include "iocp.hpp"
+#else
+    #include "epoll.hpp"
+#endif
 
-class IAsyncIoService {
-public:
-    virtual ~IAsyncIoService() = default;
-    virtual void registerSocket(Socket& socket) = 0;
-    virtual void postUserMessage() const = 0;
-    virtual void postQuitMessage() const = 0;
-    virtual HANDLE getHandle() const = 0;
 
-};
+inline std::unique_ptr<IAsyncIoService> createAsyncIoService()
+{
+#if defined(_WIN32)
+    return std::make_unique<IOCP>();
+#else
+    return std::make_unique<Epoll>();
+#endif
+}
 
-#endif // __IASYNCHIOSERVICE_HPP
+#endif // __ASYNCHIOFACTORY_HPP
 

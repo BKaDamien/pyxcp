@@ -97,7 +97,7 @@ IOCP::~IOCP()
     ::CloseHandle(m_port.handle);
 }
 
-void IOCP::registerHandle(const PerHandleData& object) const
+void IOCP::registerHandle(const PerHandleData& object)
 {
     HANDLE handle;
     bool ok;
@@ -110,7 +110,7 @@ void IOCP::registerHandle(const PerHandleData& object) const
 }
 
 
-void IOCP::registerSocket(const Socket& socket) const
+void IOCP::registerSocket(const Socket& socket)
 {
     auto handleData = PerHandleData(HandleType::HANDLE_SOCKET, socket.getHandle());
 

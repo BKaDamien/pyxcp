@@ -47,25 +47,42 @@
 
 #include "isocket.hpp"
 #include "utils.hpp"
+#include "timeout.hpp"
 
 #define SOCKET_ERROR (-1)
 #define INVALID_SOCKET (-1)
+
+using HANDLE = int;
+using SOCKET = int;
 
 class Socket : public ISocket {
 public:
 
     Socket(int family = PF_INET, int socktype = SOCK_STREAM, int protocol = IPPROTO_TCP) :
         m_family(family), m_socktype(socktype), m_protocol(protocol), m_connected(false),
-        m_addr(nullptr) {
+        m_addr(nullptr), m_timeout(150) {
         m_socket = ::socket(m_family, m_socktype, m_protocol);
         if (m_socket == INVALID_SOCKET) {
             SocketErrorExit("Socket::Socket()");
         }
+        blocking(false);
         ZeroOut(&m_peerAddress, sizeof(sockaddr_storage));
     }
 
     ~Socket() {
         ::close(m_socket);
+    }
+
+    void blocking(bool enabled) {
+        int flags = fcntl(m_socket, F_GETFL);
+
+        if (flags == -1) {
+            SocketErrorExit("Socket::blocking()");
+        }
+        flags = enabled ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
+        if (fcntl(m_socket, F_SETFL, flags) == -1) {
+            SocketErrorExit("Socket::blocking()");
+        }
     }
 
     void option(int optname, int level, int * value) {
@@ -108,9 +125,13 @@ public:
     }
 
     void connect(CAddress & address) {
+        blocking(true);
         if (::connect(m_socket, &address.address, address.length) == SOCKET_ERROR) {
-            SocketErrorExit("Socket::connect()");
+            if (errno != EINPROGRESS) {
+                SocketErrorExit("Socket::connect()");
+            }
         }
+        blocking(false);
     }
 
     void bind(CAddress & address) {
@@ -136,11 +157,25 @@ public:
         }
     }
 
-#if 0
     template <typename T, size_t N>
     void write(std::array<T, N>& arr, bool alloc = true) {
-        DWORD bytesWritten = 0;
+        size_t bytesWritten = 0;
         int addrLen;
+
+        m_timeout.arm();
+
+        if (m_socktype == SOCK_DGRAM) {
+#if 0
+            if (sendto(m_socket, (char const *)arr.data(), arr.size(), 0, (struct sockaddr const *)&XcpTl_Connection.connectionAddress, addrSize) == -1) {
+                SocketErrorExit("Socket::write() -- sendto()");
+            }
+#endif
+        } else if (m_socktype == SOCK_STREAM) {
+            if (send(m_socket, (char const *)arr.data(), arr.size(), 0) == -1) {
+                SocketErrorExit("Socket::write() -- send()");
+            }
+        }
+#if 0
         //PerIoData * iod = new PerIoData(128);
         PerIoData * iod;
 
@@ -180,16 +215,33 @@ public:
                 closesocket(m_socket);
             }
         }
-        printf("Status: %d bytes_written: %d\n", WSAGetLastError(), bytesWritten);
+#endif
+        printf("Status: %d bytes_written: %d\n", errno, bytesWritten);
+    }
+#if 0
+    void read(size_t count) {
+    if ( (n = read(sockfd, line, MAXLINE)) < 0) {
+        if (errno == ECONNRESET) {
+            close(sockfd);
+            events[i].data.fd = -1;
+    } else printf("readline error\n");
+                                                                                                                                } else if (n == 0) {
+                                                                                                                                                        close(sockfd);
+                                                                                                                                                                            events[i].data.fd = -1;
+                                                                                                                                                                                            }
+
     }
 #endif
+
     void triggerRead(unsigned int len);
 
-#if 0
     HANDLE getHandle() const {
-        return reinterpret_cast<HANDLE>(m_socket);
+        return m_socket;
     }
-#endif
+
+    const TimeoutTimer& getTimeout() const {
+        return m_timeout;
+    }
 
 private:
     int m_family;
@@ -198,6 +250,7 @@ private:
     bool m_connected;
 //    PoolManager m_pool_mgr;
     addrinfo * m_addr;
+    TimeoutTimer m_timeout {150};
     int m_socket;
     //CAddress ourAddress;
     sockaddr_storage m_peerAddress;
