@@ -25,6 +25,7 @@
 #if !defined(__IOCP_HPP)
 #define __IOCP_HPP
 
+#include "iasyncioservice.hpp"
 #include "socket.hpp"
 #include "perhandledata.hpp"
 #include "periodata.hpp"
@@ -41,17 +42,17 @@ struct PerPortData {
     HANDLE handle;
 };
 
-class IOCP {
+class IOCP : public IAsyncIoService {
 public:
     IOCP(size_t numProcessors = 1, size_t multiplier = 1);
     ~IOCP();
-    void registerSocket(const Socket& socket) const;
+    void registerSocket(Socket& socket);
     void postUserMessage() const;
     void postQuitMessage() const;
     HANDLE getHandle() const;
 
 protected:
-     void registerHandle(const PerHandleData& object) const;
+     void registerHandle(const PerHandleData& object);
 
 private:
     PerPortData m_port;
