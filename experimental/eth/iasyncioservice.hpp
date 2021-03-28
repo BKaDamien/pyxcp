@@ -35,14 +35,15 @@
 
 #include <cstdlib>
 
+#include "socket.hpp"
+
 class IAsyncIoService {
 public:
-    IAsyncIoService(size_t numProcessors = 1, size_t multiplier = 1) {};
     virtual ~IAsyncIoService() = default;
-//    virtual bool registerHandle(const PerHandleData& object) = 0;
+    virtual void registerSocket(Socket& socket) = 0;
     virtual void postUserMessage() const = 0;
     virtual void postQuitMessage() const = 0;
-//    virtual HANDLE getHandle() const = 0;
+    virtual HANDLE getHandle() const = 0;
 
 };
 
