@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.12)
 project(eth_booster VERSION 0.1.0 LANGUAGES CXX)
 
 set(BUILD_SHARED_LIBS false)
-#add_definitions("--std=c++14")
 
 if(WIN32)
     set(_PS "win")
@@ -25,6 +24,9 @@ elseif(UNIX)
     )
 endif(WIN32)
 
+target_compile_features(eth PRIVATE cxx_std_14)
+#target_compile_options(eth PRIVATE -Wall -Wextra -Wpedantic)
+#target_compile_definitions(eth PRIVATE DEFINES)
 target_include_directories(eth PUBLIC . ${_PS})
 
 add_executable(test_timestamp tests/test_timestamp.cpp)
