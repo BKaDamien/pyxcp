@@ -25,7 +25,9 @@
 #if !defined(__EPOLL_HPP)
 #define __EPOLL_HPP
 
-#include <map>
+#include <memory>
+#include <vector>
+
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/epoll.h>
@@ -34,6 +36,19 @@
 #include "iasyncioservice.hpp"
 
 void *  WorkerThread(void * param);
+
+enum class EventType {
+    SOCKET,
+    TIMEOUT
+};
+
+struct EventRecord {
+    EventType event_type;
+    union {
+        Socket const * socket;
+        TimeoutTimer const * timeout_timer;
+    } obj;
+};
 
 class Epoll : public IAsyncIoService {
 public:
@@ -51,10 +66,10 @@ public:
         ::close(m_epoll_fd);
     }
 
-    void registerSocket(Socket& socket) {
+    void registerSocket(const Socket& socket) {
 
-        registerHandle(socket.getHandle(), reinterpret_cast<void*>(&socket));
-        //registerHandle(socket.getTimeout().getHandle(), reinterpret_cast<void*>(&socket));
+        registerHandle(socket.getHandle(), reinterpret_cast<void const*>(&socket), EventType::SOCKET);
+        registerHandle(socket.getTimeout().getHandle(), reinterpret_cast<void const*>(&socket.getTimeout()), EventType::TIMEOUT);
         printf("S: %d T: %d\n", socket.getHandle(), socket.getTimeout().getHandle());
     }
 
@@ -67,11 +82,19 @@ public:
 
 protected:
 
-    void registerHandle(HANDLE handle, void * data_ptr) {
+    void registerHandle(HANDLE handle, void const * data_ptr, EventType event_type) {
 
         struct epoll_event event;
+        auto event_record = std::make_shared<EventRecord>();
+        m_events.emplace_back(event_record);
 
-        event.data.ptr = data_ptr;
+        event_record->event_type = event_type;
+        if (event_type == EventType::SOCKET) {
+            event_record->obj.socket = reinterpret_cast<Socket const*>(data_ptr);
+        } else if (event_type == EventType::TIMEOUT) {
+            event_record->obj.timeout_timer = static_cast<TimeoutTimer const*>(data_ptr);
+        }
+        event.data.ptr = event_record.get();
         event.events = EPOLLIN;
         if (::epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, handle, &event) == -1) {
             OsErrorExit("Epoll::registerHandle()");
@@ -81,7 +104,7 @@ protected:
 private:
     int m_epoll_fd;
     pthread_t m_worker_thread;
-    std::map<HANDLE, Socket&> m_timeouts;
+    std::vector<std::shared_ptr<EventRecord>> m_events;
 };
 
 

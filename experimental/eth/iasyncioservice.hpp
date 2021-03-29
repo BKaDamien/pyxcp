@@ -40,7 +40,7 @@
 class IAsyncIoService {
 public:
     virtual ~IAsyncIoService() = default;
-    virtual void registerSocket(Socket& socket) = 0;
+    virtual void registerSocket(const Socket& socket) = 0;
     virtual void postUserMessage() const = 0;
     virtual void postQuitMessage() const = 0;
     virtual HANDLE getHandle() const = 0;
