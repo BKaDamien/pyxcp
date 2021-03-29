@@ -22,9 +22,16 @@
  *
  * s. FLOSS-EXCEPTION.txt
  */
-#include "eth.hpp"
 
 #include <cstdio>
+
+#include "utils.hpp"
+
+#if defined(_WIN32)
+    #include <Windows.h>
+#else
+
+#endif
 
 void SocketErrorExit(const char * method)
 {

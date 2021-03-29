@@ -69,7 +69,6 @@ public:
 
         m_wsabuf.buf = arr.data();
         m_wsabuf.len = arr.size();
-        printf("Bx: %s[%d]\n", m_wsabuf.buf, m_wsabuf.len);
     }
 
     WSABUF * get_buffer() {

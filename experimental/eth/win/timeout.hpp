@@ -64,7 +64,6 @@ public:
     }
 
     void arm() {
-        printf("m_iocp: %p\n", m_iocp);
         if (m_iocp != nullptr) {
             if (!::CreateTimerQueueTimer(&m_timer, m_timer_queue, Timeout_CB, reinterpret_cast<void*>(m_iocp), m_millis, 0, 0)) {
                 OsErrorExit("TimeoutTimer::arm() -- CreateTimerQueueTimer");

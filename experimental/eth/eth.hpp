@@ -26,7 +26,7 @@
 #define __ETH_HPP
 
 #if defined(_WIN32)
-
+    #include <WinSock2.h>
 #else
     #include <ctype.h>
     #include <errno.h>
@@ -47,12 +47,10 @@
     #include <sys/wait.h>
 #endif
 
-#include "socket.hpp"
-#include "utils.hpp"
-#include "timestamp.hpp"
-#include "exceptions.hpp"
-
 #include "config.h"
+#include "utils.hpp"
+
+#include <stdio.h>
 
 #if defined(_WIN32)
 
@@ -60,14 +58,13 @@ struct Eth {
 
     Eth() {
         WSAData data;
-        if (WSAStartup(MAKEWORD(2, 2), &data) != 0) {
-            throw OSException();
+        if (::WSAStartup(MAKEWORD(2, 2), &data) != 0) {
+            OsErrorExit("Eth::Eth() -- WSAStartup");
         }
-        printf("WSA OK!!!\n");
     }
 
     ~Eth() {
-        WSACleanup();
+        ::WSACleanup();
     }
 };
 
