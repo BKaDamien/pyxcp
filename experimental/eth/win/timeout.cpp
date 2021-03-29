@@ -23,29 +23,16 @@
  * s. FLOSS-EXCEPTION.txt
  */
 
-/*
- *
- * Interface for asynchronous I/O services (IOCP, epoll, kqueue...).
- *
- *
- */
+#include <cstdio>
+#include <cstdint>
 
-#if !defined(__IASYNCHIOSERVICE_HPP)
-#define __IASYNCHIOSERVICE_HPP
+#include "timeout.hpp"
 
-#include <cstdlib>
+void CALLBACK Timeout_CB(void * lpParam, unsigned char TimerOrWaitFired)
+{
+    IOCP const * const iocp = reinterpret_cast<IOCP const * const>(lpParam);
 
-#include "socket.hpp"
+    printf("TIMEOUT\n");
 
-class IAsyncIoService {
-public:
-    virtual ~IAsyncIoService() = default;
-    virtual void registerSocket(Socket& socket) = 0;
-    virtual void postUserMessage() const = 0;
-    virtual void postQuitMessage() const = 0;
-    virtual HANDLE getHandle() const = 0;
-
-};
-
-#endif // __IASYNCHIOSERVICE_HPP
+}
 

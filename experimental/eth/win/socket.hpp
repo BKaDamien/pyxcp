@@ -35,11 +35,13 @@
 #include <Windows.h>
 
 #include "isocket.hpp"
+#include "timeout.hpp"
 #include "periodata.hpp"
 #include "perhandledata.hpp"
 #include "pool.hpp"
 #include "poolmgr.hpp"
 
+class IOCP;
 
 class Socket : public ISocket {
 public:
@@ -140,6 +142,7 @@ public:
             iod = m_pool_mgr.get_iod().acquire();
             //iod = m_iod_pool.acquire();
         }
+        m_timeout.arm();
         iod->reset();
         iod->set_buffer(arr);
         iod->set_opcode(IoType::IO_WRITE);
@@ -180,6 +183,15 @@ public:
         return reinterpret_cast<HANDLE>(m_socket);
     }
 
+    const TimeoutTimer& getTimeoutTimer() const {
+        return m_timeout;
+    }
+
+    void setIOCP(IOCP * iocp) {
+        m_iocp = iocp;
+        m_timeout.setIOCP(iocp);
+    }
+
 private:
     int m_family;
     int m_socktype;
@@ -190,6 +202,8 @@ private:
     SOCKET m_socket;
     //CAddress ourAddress;
     SOCKADDR_STORAGE m_peerAddress;
+    TimeoutTimer m_timeout {150};
+    IOCP * m_iocp = nullptr;
 };
 
 #endif  // __SOCKET_HPP

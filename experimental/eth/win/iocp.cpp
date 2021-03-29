@@ -110,10 +110,11 @@ void IOCP::registerHandle(const PerHandleData& object)
 }
 
 
-void IOCP::registerSocket(const Socket& socket)
+void IOCP::registerSocket(Socket& socket)
 {
     auto handleData = PerHandleData(HandleType::HANDLE_SOCKET, socket.getHandle());
 
+    socket.setIOCP(this);
     registerHandle(handleData);
 
 }

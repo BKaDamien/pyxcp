@@ -66,7 +66,7 @@ public:
         ::close(m_epoll_fd);
     }
 
-    void registerSocket(const Socket& socket) {
+    void registerSocket(Socket& socket) {
 
         registerHandle(socket.getHandle(), reinterpret_cast<void const*>(&socket), EventType::SOCKET);
         registerHandle(socket.getTimeout().getHandle(), reinterpret_cast<void const*>(&socket.getTimeout()), EventType::TIMEOUT);
