@@ -47,7 +47,7 @@ class IOCP : public IAsyncIoService {
 public:
     IOCP(size_t numProcessors = 1, size_t multiplier = 1);
     ~IOCP();
-    void registerSocket(Socket& socket);
+    void registerSocket(const Socket& socket);
     void postUserMessage() const;
     void postQuitMessage() const;
     HANDLE getHandle() const;
