@@ -162,7 +162,7 @@ public:
         size_t bytesWritten = 0;
         int addrLen;
 
-        //m_timeout.arm();
+        m_timeout.arm();
 
         if (m_socktype == SOCK_DGRAM) {
 #if 0

@@ -31,6 +31,10 @@
     #define GET_LAST_SOCKET_ERROR()     WSAGetLastError()
     #define GET_LAST_ERROR()            GetLastError()
 #else
+    #include <stdlib.h>
+    #include <errno.h>
+    #include <time.h>
+
     #define ZeroOut(p, s)               ::memset((p), 0, (s))
     #define GET_LAST_SOCKET_ERROR()     errno
     #define GET_LAST_ERROR()            errno
