@@ -26,6 +26,7 @@
 #include "iocp.hpp"
 #include "socket.hpp"
 #include "exceptions.hpp"
+#include "timeout.hpp"
 
 #include <iostream>
 #include <cstdio>
@@ -119,23 +120,22 @@ void IOCP::registerSocket(Socket& socket)
 
 }
 
+void IOCP::postUserMessage(MessageCode messageCode, void * data) const
+{
+    if (!::PostQueuedCompletionStatus(m_port.handle, 0, static_cast<ULONG_PTR>(messageCode), (OVERLAPPED*)data)) {
+        OsErrorExit("IOCP::postUserMessage()");
+    }
+}
+
 void IOCP::postQuitMessage() const
 {
-    if (!::PostQueuedCompletionStatus(m_port.handle, 0, static_cast<ULONG_PTR>(NULL), nullptr)) {
-        OsErrorExit("IOCP::postQuitMessage()");
-    }
+    postUserMessage(MessageCode::QUIT, nullptr);
 }
 
 HANDLE IOCP::getHandle() const
 {
     return m_port.handle;
 }
-
-void IOCP::postUserMessage() const
-{
-    ::PostQueuedCompletionStatus(m_port.handle, 0, static_cast<ULONG_PTR>(NULL), nullptr);
-}
-
 
 static DWORD WINAPI WorkerThread(LPVOID lpParameter)
 {
@@ -146,14 +146,21 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter)
     PerHandleData * phd = nullptr;
     OVERLAPPED * olap = nullptr;
     bool exitLoop = false;
+    MessageCode messageCode;
     DWORD error;
 
     printf("Entering worker thread %d.\n", ::GetCurrentThreadId());
     while (!exitLoop) {
         if (::GetQueuedCompletionStatus(iocp->getHandle(), &bytesTransfered, &completionKey, (LPOVERLAPPED*)&olap, INFINITE)) {
-            if ((bytesTransfered == 0) &&  (completionKey == static_cast<ULONG_PTR>(NULL))) {
-                iocp->postQuitMessage();    // "Broadcast"
-                exitLoop = true;
+            if (bytesTransfered == 0) {
+                messageCode = static_cast<MessageCode>(completionKey);
+                if (messageCode == MessageCode::TIMEOUT) {
+                    // TODO: Timeout handling.
+                } else if (messageCode == MessageCode::QUIT) {
+                    iocp->postQuitMessage();    // "Broadcast"
+                    exitLoop = true;
+                }
+
             } else {
                 phd = reinterpret_cast<PerHandleData *>(completionKey);
                 iod = reinterpret_cast<PerIoData* >(olap);
@@ -192,9 +199,16 @@ static DWORD WINAPI WorkerThread(LPVOID lpParameter)
     ::ExitThread(0);
 }
 
+void CALLBACK Timeout_CB(void * lpParam, unsigned char TimerOrWaitFired)
+{
+    IOCP const * const iocp = reinterpret_cast<IOCP const * const>(lpParam);
+
+    //printf("TIMEOUT\n");
+    iocp->postUserMessage(MessageCode::TIMEOUT);
+}
+
+
 #if 0
-
-
 void Socket::triggerRead(unsigned int len)
 {
     DWORD numReceived = (DWORD)0;

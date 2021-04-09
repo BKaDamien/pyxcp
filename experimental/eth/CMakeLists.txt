@@ -15,7 +15,6 @@ message(STATUS ${MY_INCLUDES})
 if(WIN32)
     add_library(eth
         win/iocp.cpp
-        win/timeout.cpp
         utils.cpp
         poolmgr.cpp
     )

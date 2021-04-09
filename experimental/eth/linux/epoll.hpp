@@ -73,7 +73,7 @@ public:
         printf("S: %d T: %d\n", socket.getHandle(), socket.getTimeout().getHandle());
     }
 
-    void postUserMessage() const {}
+    void postUserMessage(MessageCode messageCode, void * data = nullptr) const {}
     void postQuitMessage() const {}
 
     HANDLE getHandle() const {

@@ -43,12 +43,13 @@ struct PerPortData {
     HANDLE handle;
 };
 
+
 class IOCP : public IAsyncIoService {
 public:
     IOCP(size_t numProcessors = 1, size_t multiplier = 1);
     ~IOCP();
     void registerSocket(Socket& socket);
-    void postUserMessage() const;
+    void postUserMessage(MessageCode messageCode, void * data = nullptr) const;
     void postQuitMessage() const;
     HANDLE getHandle() const;
 
