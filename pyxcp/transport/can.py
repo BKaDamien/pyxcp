@@ -7,7 +7,7 @@
 __copyright__ = """
     pySART - Simplified AUTOSAR-Toolkit for Python.
 
-   (C) 2009-2020 by Christoph Schueler <cpu12.gems@googlemail.com>
+   (C) 2009-2021 by Christoph Schueler <cpu12.gems@googlemail.com>
 
    All Rights Reserved
 
@@ -27,6 +27,7 @@ __copyright__ = """
 """
 
 import abc
+from bisect import bisect_left
 from collections import OrderedDict
 import functools
 import operator
@@ -38,10 +39,11 @@ from pyxcp.transport.base import BaseTransport
 from pyxcp.config import Configuration
 from pyxcp.types import NumericType
 
-
-CAN_EXTENDED_ID = 0x80000000
-MAX_11_BIT_IDENTIFIER = (1 << 11) - 1
-MAX_29_BIT_IDENTIFIER = (1 << 29) - 1
+CAN_EXTENDED_ID         = 0x80000000
+MAX_11_BIT_IDENTIFIER   = (1 << 11) - 1
+MAX_29_BIT_IDENTIFIER   = (1 << 29) - 1
+MAX_DLC_CLASSIC         = 8
+CAN_FD_DLCS             = (12, 16, 20, 24, 32, 48, 64)  # Discrete CAN-FD DLCs in case DLC > 8.
 
 
 class IdentifierOutOfRangeError(Exception):
