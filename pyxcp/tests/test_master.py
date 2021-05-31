@@ -56,6 +56,7 @@ class MockCanInterface(CanInterfaceBase):
     def __init__(self):
         self.data = deque()
         self.receive_callback = None
+        self.is_fd = False
 
     def init(self, parent, receive_callback):
         self.receive_callback = receive_callback
