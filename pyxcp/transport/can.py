@@ -98,6 +98,26 @@ def samplePointToTsegs(tqs: int, samplePoint: float) -> tuple:
     return (tseg1, tseg2)
 
 
+def padFrame(frame: bytes, padding_value: int, padding_len:int = 0) -> bytes:
+    """Pad frame to next discrete DLC value.
+
+    References:
+    -----------
+    ISO/DIS 15765 - 4; 8.2 Data length Code (DLC)
+    AUTOSAR CP Release 4.3.0, Specification of CAN Transport Layer; 7.3.8 N-PDU padding
+    AUTOSAR CP Release 4.3.0, Specification of CAN Driver; [SWS_CAN_00502], [ECUC_Can_00485]
+    AUTOSAR CP Release 4.3.0, Requirements on CAN; [SRS_Can_01073], [SRS_Can_01086], [SRS_Can_01160]
+    """
+    frame_len = max(len(frame), padding_len)
+    if frame_len <= MAX_DLC_CLASSIC:
+        actual_len = MAX_DLC_CLASSIC
+    else:
+        actual_len = CAN_FD_DLCS[bisect_left(CAN_FD_DLCS, frame_len)]
+    # append fill bytes up to MAX_DLC resp. next discrete FD DLC.
+    if len(frame) < actual_len:
+        frame += bytes([padding_value]) * (actual_len - len(frame))
+    return frame
+
 class Identifier:
     """Convenience class for XCP formatted CAN identifiers.
 
